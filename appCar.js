@@ -25,8 +25,6 @@ function Player(name, x,y, frame) {
 	this.y = y;
 	this.name = name;	
 	this.frame = frame;	
-	this.clipXMin = 15 * frame;
-	this.clipXMax = 15 * frame + 15;
 }		
 
   
@@ -40,7 +38,7 @@ io.sockets.on('connection', function (socket) {
 		clientids.push(socket.id);		
 		io.sockets.emit("joinAnnounce", playerName);
 		//socket.broadcast.emit("joinAnnounce", playerName);
-		io.sockets.emit('addplayer',playerlist, playerName,x,y); // add player on everyones screen
+		io.sockets.emit('addplayer',playerlist, playerName,x,y, frame); // add player on everyones screen
 	   // io.sockets.emit("joinSync",playerlist,x,y);
 	});
   
@@ -50,8 +48,13 @@ io.sockets.on('connection', function (socket) {
 		socket.broadcast.emit("playermove", pName, playerX, playerY);
 	});
 	
-	socket.on("resyncplayer", function (pName, playerx, playery) {
-		socket.broadcast.emit("syncplayer", pName, playerx,playery);
+	socket.on("sendkey", function(pName, key, value) {
+		console.log(key + " " + value);
+		socket.broadcast.emit("setkey", pName, key, value);
+	});
+	
+	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed) {
+		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);
 	});    
   
 	socket.on('disconnect', function(){
