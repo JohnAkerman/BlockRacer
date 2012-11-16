@@ -1,0 +1,321 @@
+<!DOCTYPE html>	
+<html>
+	<head>
+		<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+	    <meta name="apple-mobile-web-app-capable" content="yes" />
+	    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>Block Racer</title>
+		<script src="js/jquery.js"></script>
+		
+		<style type="text/css">
+			html { background: black; }
+			#details { margin: 0 auto; width: 1240px; margin-top: 25px; } 
+			#game { margin: 0 auto; margin-top: 10px; width: 1000px; height: 750px; }
+			#playerID { color: white; font-family: Verdana; }
+			img { display: none; }
+			#nameVal, #saveName { border: none; padding: 10px; }
+			#saveName { background-color: green; color: white; cursor: pointer;}
+		</style>
+		
+	</head>
+	<body>
+	
+		<div id="details">				
+			What is your name <input type="text" value="" name="name" id="nameVal" placeholder="Your name"/> <input type="submit" name="submit" id="saveName" value="Go" /><span id="you"></span>			
+		</div>
+		
+		<img id="carBitmap" src="cars.png" />
+		<div id="game"></div>
+	
+		<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+		<script type="text/javascript">
+		
+			$("#nameVal").focus();
+			
+			var carBitmap = new Image();
+			carBitmap = document.getElementById("carBitmap");
+			var playerlist = [];	
+			var playerJoinList = [];// Store players who joined
+			var netTimer = 10;
+			
+			var canvas = document.createElement("canvas");
+				
+			// FPS 
+			var lastTime;
+			var frames;
+			var totalTime;
+			var updateTime;
+			var updateFrames;
+			var lastCurAmount;
+			var curAmount;	
+			// End FPS
+			
+			var playerSpeed = 1, playerSize = 10;
+			var playerName = null;				
+			ctx = null;			
+			var height = 700, width = 1000, then = Date.now(), mousePosition = {x:0, y:0};
+			
+			var requestAnimFrame =  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.msRequestAnimationFrame || window.oRequestAnimationFrame || function(/* function */ callback){
+				window.setTimeout(callback, 1000 / 60);
+			};
+			var KEY = {'BACKSPACE': 8, 'TAB': 9, 'NUM_PAD_CLEAR': 12, 'ENTER': 13, 'SHIFT': 16, 'CTRL': 17, 'ALT': 18, 'PAUSE': 19, 'CAPS_LOCK': 20, 'ESCAPE': 27,'SPACEBAR': 32, 'PAGE_UP': 33, 'PAGE_DOWN': 34, 'END': 35, 'HOME': 36, 'ARROW_LEFT': 37, 'ARROW_UP': 38, 'ARROW_RIGHT': 39, 'ARROW_DOWN': 40,'PRINT_SCREEN': 44, 'INSERT': 45, 'DELETE': 46, 'SEMICOLON': 59,'WINDOWS_LEFT': 91, 'WINDOWS_RIGHT': 92, 'SELECT': 93,'NUM_PAD_ASTERISK': 106, 'NUM_PAD_PLUS_SIGN': 107,	'NUM_PAD_HYPHEN-MINUS': 109, 'NUM_PAD_FULL_STOP': 110,'NUM_PAD_SOLIDUS': 111, 'NUM_LOCK': 144, 'SCROLL_LOCK': 145,'EQUALS_SIGN': 187, 'COMMA': 188, 'HYPHEN-MINUS': 189,'FULL_STOP': 190, 'SOLIDUS': 191, 'GRAVE_ACCENT': 192,'LEFT_SQUARE_BRACKET': 219, 'REVERSE_SOLIDUS': 220,'RIGHT_SQUARE_BRACKET': 221, 'APOSTROPHE': 222, 'M' : 77 };
+			
+						
+			function Player(name, x,y, frame) {
+				this.x = x;
+				this.y = y;
+				this.name = name;
+				this.frame = frame;
+				this.angle = 0;
+				/*			
+				this.vx = 0;
+				this.vy = 0;
+				this.angle = 90;
+				this.topSpeed = 0.3;
+				this.acc = 0.05;
+				this.reverse = 0.1;
+				this.brakes = 0.2;
+				this.friction = 0.05;
+				this.handeling = .2;
+				this.grip = 15;
+				this.minGrip = 15;
+				this.speed = 0;
+				this.drift = 0;
+				
+				
+				this.left = false;
+				this.up = false;
+				this.right = false;
+				this.down = false;*/
+			}
+			
+			$("#saveName").click(function() {				
+				playerName = $("#nameVal").val() + Math.floor(Math.random() * 101);		
+				runGame();
+			});
+			
+			function runGame() {					
+				document.getElementById("you").innerHTML = "You are " + playerName;				
+				var socket = null;
+				
+				try {
+					socket = io.connect("http://localhost:8080");				
+				}catch (err) {
+					alert("Sorry server not running");
+				}
+				
+				var player = new Player(playerName, Math.floor(Math.random() * 700),Math.floor(Math.random() * 550), Math.floor(Math.random() * 4));
+				playerlist.push(player);
+				
+				
+				// Sockets				
+				
+				// Call initplayer on server		
+				socket.emit("initPlayer", playerlist[0].name,playerlist[0].x, playerlist[0].y);
+				
+				// Server will fire this to update other players
+				socket.on("playermove", function (pName, x, y) {
+					if (playerlist) {
+						for (var i in playerlist) {
+							if (pName == playerlist[i].name) {
+								playerlist[i].x = x;
+								playerlist[i].y = y;
+							}
+						}
+					}
+				});		
+
+				socket.on("joinAnnounce", function(pName) {
+					if (pName) {
+						playerJoinList.push(pName);							
+						setInterval(function(){
+							playerJoinList.splice(0, 1);
+						},5000);
+					}
+				});
+				
+				socket.on("syncplayer", function(pName,x,y) {
+					if (playerlist) {
+						for (var i in playerlist) {
+							if (pName == playerlist[i].name && playerName != playerlist[i].name) {
+								playerlist[i].x = x;
+								playerlist[i].y = y;
+							}
+						}
+					}
+				});
+				
+				socket.on("joinSync", function (playerlistServer,x,y) {
+					if (playerlist) {				
+						for (var i in playerlist) {
+							if (playerName != playerlistServer[i]) {
+								spawnPlayer(playerlistServer[i], x,y); 
+							}					
+						}			
+					}
+				});			
+				
+				socket.on("addplayer", function (playerServerList, newPlayerName) {						
+					for (var i = 0; i < playerServerList.length; i++) {
+						if (playerlist[0].name != playerServerList[i].name) {
+							spawnPlayer(playerServerList[i].name,playerServerList[i].x,playerServerList[i].y);
+						}
+					}
+				});
+				
+				socket.on('killplayer', function (otherplayername) {
+					for(var i in playerlist) {
+						if(playerlist[i].name == otherplayername) {
+							playerlist.splice(i, 1);						
+						}
+					}
+				});
+							
+				// Functionality
+				function spawnPlayer(name,x,y) {
+					var p = new Player(name,x,y);
+					playerlist.push(p);
+				}
+				
+				function renderJoinList() {			
+					for(var i=0; i < playerJoinList.length; i++) {
+						drawString(playerJoinList[i] + " joined", 800, (20+ i * 20), 11);
+					}
+				}
+						
+				function renderPlayers() {
+					for (var i=0; i< playerlist.length; i++) {
+						if (playerName == playerlist[i].name)
+							ctx.fillStyle = "green";
+						else
+							ctx.fillStyle = "red";
+						
+						ctx.fillRect(playerlist[i].x-playerSize, playerlist[i].y-playerSize, playerSize, playerSize);
+						drawString(playerlist[i].name, playerlist[i].x + 3, playerlist[i].y, 10);
+						/*
+						ctx.save();				
+						ctx.translate(-playerlist[i].x - 7,-playerlist[i].y - 12);
+						ctx.rotate( playerlist[i].angle * Math.PI / 180);
+						ctx.drawImage(carBitmap, playerlist[i].frame * 15,0, 15,24,playerlist[i].x + playerlist[i].x, playerlist[i].y +playerlist[i].y, 15, 24);
+						ctx.restore();
+						
+						ctx.save();
+						ctx.translate(playerlist[i].x, playerlist[i].y);
+						ctx.rotate((playerlist[i].angle + playerlist[i].drift) * Math.PI / 180);
+						ctx.drawImage(carBitmap, playerlist[i].frame * 15, 0, 15, 24, -7, (-12 + (Math.abs(playerlist[i].drift/3))), 15, 24);
+						ctx.restore();
+						*/
+					}
+				}		
+				
+				
+				
+				 // Prevent Scrolling
+				document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);				
+			
+				function init() {					
+					canvas.height = height;
+					canvas.width = width;
+					
+					if (canvas.getContext) {
+						document.getElementById("game").appendChild(canvas);
+						ctx = canvas.getContext("2d");
+						ctx.save();
+					}
+					else alert("Unsupported");
+					
+					lastTime = (new (Date)).getTime();
+					
+					frames = totalTime = updateTime = updateFrames = 0;
+					window.scrollTo(-1,0);
+				}
+				
+				// Listeners
+				var keysDown = [];
+				addEventListener("keydown", function(e) {
+					keysDown[e.keyCode] = true;					
+				}, false);
+				
+				addEventListener("keyup", function (e) {
+					delete keysDown[e.keyCode];
+				
+				}, false);
+				
+				function drawString(textIn,xIn,yIn, sizeIn) {
+					ctx.fillStyle= "white";				
+					ctx.font="bold "+ sizeIn+ "px Arial";
+					ctx.textBaseline = "bottom";
+					ctx.fillText(textIn, xIn, yIn);
+				}				
+					
+				var GameUpdate = function(delta) {
+					
+					
+					if (KEY.ARROW_LEFT in keysDown) { playerlist[0].x -= playerSpeed;
+						socket.emit("moveplayer", playerlist[0].name, playerlist[0].x, playerlist[0].y);
+					}			
+					
+					if (KEY.ARROW_RIGHT in keysDown) { playerlist[0].x += playerSpeed;
+						socket.emit("moveplayer", playerlist[0].name, playerlist[0].x, playerlist[0].y);
+					}				
+					
+					if (KEY.ARROW_UP in keysDown) { playerlist[0].y -= playerSpeed;
+						socket.emit("moveplayer", playerlist[0].name, playerlist[0].x, playerlist[0].y);
+					}
+					
+					if (KEY.ARROW_DOWN in keysDown) { playerlist[0].y += playerSpeed;
+						socket.emit("moveplayer", playerlist[0].name, playerlist[0].x, playerlist[0].y);
+					}		
+				}		
+				
+				var GameLoop = function() {
+					var now = Date.now();
+					var delta = now - then;
+					ctx.clearRect(0,0,width,height);
+					
+					ctx.fillStyle="cornflowerblue";
+					ctx.fillRect(0,0,width,height);
+					
+					var now = (new Date()).getTime();
+					deltaFPS = now-lastTime;
+					lastTime = now;
+					totalTime+=deltaFPS;
+					frames++;
+					updateTime+=deltaFPS;
+					updateFrames++;
+					
+					GameUpdate(delta / 1000);
+					
+					// Draw stuff
+					renderPlayers();					
+					renderJoinList();					
+					
+					if(updateTime > 1000) {
+						updateTime = 0;
+						updateFrames =0;
+						netTimer--;
+					}
+					
+					if (netTimer <1) {
+						socket.emit("resyncplayer",playerlist[0].name, playerlist[0].x,playerlist[0].y);
+						netTimer = 15; // Every 15 seconds resync player pos
+					}
+					
+					lastCurAmount = curAmount;
+					curAmount = Math.round(1000*updateFrames/updateTime);
+
+					if (isNaN(curAmount))
+						curAmount = lastCurAmount;
+					
+					drawString("FPS Avg: " + Math.round(1000*frames/totalTime) + " Cur: " + curAmount, 5, 20, 12);
+								
+					then = now;				
+					requestAnimFrame(GameLoop);				
+				}
+				
+				init();
+				GameLoop();
+			}
+		</script>
+	</body>
+</html>
