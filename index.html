@@ -62,8 +62,7 @@
 			
 			var KEYNAMES = {'LEFT' : 0, 'RIGHT' : 1, 'UP' : 2, 'DOWN': 3 }; 
 			var KEY = {'BACKSPACE': 8, 'TAB': 9, 'NUM_PAD_CLEAR': 12, 'ENTER': 13, 'SHIFT': 16, 'CTRL': 17, 'ALT': 18, 'PAUSE': 19, 'CAPS_LOCK': 20, 'ESCAPE': 27,'SPACEBAR': 32, 'PAGE_UP': 33, 'PAGE_DOWN': 34, 'END': 35, 'HOME': 36, 'ARROW_LEFT': 37, 'ARROW_UP': 38, 'ARROW_RIGHT': 39, 'ARROW_DOWN': 40,'PRINT_SCREEN': 44, 'INSERT': 45, 'DELETE': 46, 'SEMICOLON': 59,'WINDOWS_LEFT': 91, 'WINDOWS_RIGHT': 92, 'SELECT': 93,'NUM_PAD_ASTERISK': 106, 'NUM_PAD_PLUS_SIGN': 107,	'NUM_PAD_HYPHEN-MINUS': 109, 'NUM_PAD_FULL_STOP': 110,'NUM_PAD_SOLIDUS': 111, 'NUM_LOCK': 144, 'SCROLL_LOCK': 145,'EQUALS_SIGN': 187, 'COMMA': 188, 'HYPHEN-MINUS': 189,'FULL_STOP': 190, 'SOLIDUS': 191, 'GRAVE_ACCENT': 192,'LEFT_SQUARE_BRACKET': 219, 'REVERSE_SOLIDUS': 220,'RIGHT_SQUARE_BRACKET': 221, 'APOSTROPHE': 222, 'M' : 77 };
-			
-						
+									
 			function Player(name, x,y, frame) {
 				this.x = x;
 				this.y = y;
@@ -198,6 +197,10 @@
 					playerlist.push(p);
 				}
 				
+				function syncPlayerStats( {
+				
+				}
+				
 				function renderJoinList() {			
 					for(var i=0; i < playerJoinList.length; i++) {
 						drawString(playerJoinList[i] + " joined", 800, (20+ i * 20), 11);
@@ -205,19 +208,12 @@
 				}
 						
 				function renderPlayers() {
-					for (var i=0; i< playerlist.length; i++) {
-						if (playerName == playerlist[i].name)
-							ctx.fillStyle = "green";
-						else
-							ctx.fillStyle = "red";
-						
+					for (var i=0; i< playerlist.length; i++) {					
 						
 						ctx.save();
-						ctx.translate(playerlist[i].x-playerlist[i].width, playerlist[i].y-playerlist[i].height);
-						
+						ctx.translate(playerlist[i].x-playerlist[i].width, playerlist[i].y-playerlist[i].height);						
 						drawString(playerlist[i].name + " " + Math.round(playerlist[i].speed,4), 0,0, 10);
-						ctx.rotate(playerlist[i].angle * Math.PI/180);
-							
+						ctx.rotate(playerlist[i].angle * Math.PI/180);							
 						ctx.drawImage(carBitmap, playerlist[i].frame * 15,0, 15,24,-7, 0, 15, 24);
 						//ctx.fillRect(playerlist[i].x-playerlist[i].width, playerlist[i].y-playerlist[i].height, playerlist[i].width, playerlist[i].height);
 						//drawString(playerlist[i].name, playerlist[i].x + 3, playerlist[i].y, 10);
@@ -230,12 +226,10 @@
 						ctx.translate(-playerlist[i].x - 7,-playerlist[i].y - 12);
 						ctx.rotate( playerlist[i].angle * Math.PI / 180);
 						ctx.drawImage(carBitmap, playerlist[i].frame * 15,0, 15,24,playerlist[i].x + playerlist[i].x, playerlist[i].y +playerlist[i].y, 15, 24);
-						ctx.restore();
-						
+						ctx.restore();						
 						*/
 					}
-				}		
-				
+				}					
 				
 				
 				 // Prevent Scrolling
@@ -314,8 +308,7 @@
 						playerlist[0].keys[KEYNAMES.DOWN] = false;
 						socket.emit("sendkey", playerlist[0].name, KEYNAMES.DOWN, false);
 					}
-				});
-				
+				});				
 				
 				function drawString(textIn,xIn,yIn, sizeIn) {
 					ctx.fillStyle= "white";				
@@ -336,8 +329,7 @@
 					//var play = playerlist[0];
 /*
 					if (KEY.ARROW_UP in keysDown && playlist[0].up == false) {
-						playerlist[0].up = true;
-									
+						playerlist[0].up = true;									
 					}
 					else
 						playerlist[0].up = false;
@@ -356,7 +348,8 @@
 						playerlist[0].right = true;
 					else
 						playerlist[0].right = false;
-						*/
+					*/
+					
 					for (i = 0; i < playerlist.length; i++ ) {
 						var play = playerlist[i];
 			
