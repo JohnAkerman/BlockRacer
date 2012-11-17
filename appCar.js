@@ -55,6 +55,7 @@ io.sockets.on('connection', function (socket) {
 	
 	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed) {
 		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);
+		io.sockets.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,3);		
 	});    
   
 	socket.on('disconnect', function(){
