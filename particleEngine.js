@@ -5,14 +5,14 @@ var particleEngine = new (function() {
 					function Particle(posX, posY) {
 						var that = this;
 						
-						that.positionX = (posX + 6) + randomBetween(-1.0, 1.0);
-						that.positionY = (posY + 6) + randomBetween(-1.0, 1.0);
+						that.positionX = (posX) + randomBetween(-1.0, 1.0);
+						that.positionY = (posY) + randomBetween(-1.0, 1.0);
 												
 						that.directionX = randomBetween(-.6,1.2);
 						that.directionY = randomBetween(-.6,1.2);
-						that.life = randomBetween(5,10);
-						that.size = randomBetween(20, 52);
-						that.alpha = randomBetween(.01,.212);	
+						that.life = randomBetween(10,35);
+						that.size = randomBetween(8, 15);
+						that.alpha = randomBetween(.01,.12);	
 						
 						that.texturePick = randomBetween(1, 5);
 					}					

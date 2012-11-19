@@ -26,7 +26,6 @@ function Player(name, x,y, frame) {
 	this.name = name;	
 	this.frame = frame;	
 }		
-
   
 io.sockets.on('connection', function (socket) {  
 	
@@ -42,21 +41,23 @@ io.sockets.on('connection', function (socket) {
 	   // io.sockets.emit("joinSync",playerlist,x,y);
 	});
   
-  
 	// When server recieves a moveplayer command, broadcast it to players
 	socket.on("moveplayer", function (pName, playerX, playerY) {
 		socket.broadcast.emit("playermove", pName, playerX, playerY);
 	});
 	
 	socket.on("sendkey", function(pName, key, value) {
-		console.log(key + " " + value);
 		socket.broadcast.emit("setkey", pName, key, value);
 	});
 	
 	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed) {
 		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);
-		io.sockets.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,3);		
+		io.sockets.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,4);							
 	});    
+	
+	socket.on("sendrefresh", function (a) {
+		socket.broadcast.emit("forcerefresh", a);
+	});
   
 	socket.on('disconnect', function(){
 		io.sockets.emit('killplayer',socket.clientname);
@@ -64,15 +65,13 @@ io.sockets.on('connection', function (socket) {
 		delete clientids[socket.id];
 		
 		for(var i in playerlist) {
-			if(playerlist[i].name == socket.clientname) {
-				playerlist.splice(i, 1);
-			}
+			if(playerlist[i].name == socket.clientname) 
+				playerlist.splice(i, 1);			
 		}
 				
 		for(var i in clientids) {
-			if(clientids[i] == socket.id) {
+			if(clientids[i] == socket.id) 
 				clientids.splice(i, 1);
-			}
 		}
 	});   
 });

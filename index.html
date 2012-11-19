@@ -9,29 +9,33 @@
 		
 		<style type="text/css">
 			html { background: black; }
-			#details { margin: 0 auto; width: 1240px; margin-top: 25px; } 
+			#details { margin: 0 auto; width: 1000px; margin-top: 25px; font-family: Arial; color: white; font-weight: bold; font-size: 14px; } 
 			#game { margin: 0 auto; margin-top: 10px; width: 1000px; height: 750px; }
 			#playerID { color: white; font-family: Verdana; }
 			img { display: none; }
 			#nameVal, #saveName { border: none; padding: 10px; }
-			#saveName { background-color: green; color: white; cursor: pointer;}
-			#you { font-family: Arial; color: white; font-weight: bold; font-size: 14px; margin-left: 30px;}
+			#saveName { background-color: green; color: white; cursor: pointer; margin-right: 20px;}
+			#you { margin-left: 30px;}
 		</style>
 		
 	</head>
 	<body>
 	
 		<div id="details">				
-			What is your name <input type="text" value="" name="name" id="nameVal" autocomplete="off" placeholder="Your name"/> <input type="submit" name="submit" id="saveName" value="Go" /><span id="you"></span>			
+			 <input type="text" value="" name="name" id="nameVal" autocomplete="off" placeholder="Your name"/> <input type="submit" name="submit" id="saveName" value="Go" />Display Names: <input type="checkbox" value="" id="displayNames"/><span id="you"></span>	
 		</div>
 		
 		<img id="carBitmap" src="cars.png" />
+		<img id="skidBitmap" src="skids.png" />
 		<div id="game"></div>
 	
 		<script src="http://localhost:8080/socket.io/socket.io.js"></script>
 		<script src="maths.js" type="text/javascript"></script>
+		<script src="calcHash.js" type="text/javascript"></script>
 		<script src="particleEngine.js" type="text/javascript"></script>
+		
 		<script type="text/javascript">
+					
 			var drawString = function (textIn,xIn,yIn, sizeIn) {
 				ctx.fillStyle= "white";				
 				ctx.font="bold "+ sizeIn+ "px Arial";
@@ -46,8 +50,13 @@
 			
 			var carBitmap = new Image();
 			carBitmap = document.getElementById("carBitmap");
+			
+			var skidBitmap = new Image();
+			skidBitmap = document.getElementById("skidBitmap");
+			
 			var playerlist = [];	
 			var playerJoinList = [];// Store players who joined
+			var skidList = [];
 			var netTimer = 10;
 			
 			var canvas = document.createElement("canvas");
@@ -62,6 +71,15 @@
 			var curAmount;	
 			
 			var debugToggle = true;
+			var dispNames = false;
+			
+			$("#displayNames").change(function() {
+				if ($(this).attr("checked") == "checked")
+					dispNames = true;
+				else
+					dispNames = false;
+			});
+			
 			var collisionColor = "cornflowerblue";
 			
 			// End FPS
@@ -77,7 +95,15 @@
 			
 			var KEYNAMES = {'LEFT' : 0, 'RIGHT' : 1, 'UP' : 2, 'DOWN': 3,'SPACE':4 }; 
 			var KEY = {'BACKSPACE': 8, 'TAB': 9, 'NUM_PAD_CLEAR': 12, 'ENTER': 13, 'SHIFT': 16, 'CTRL': 17, 'ALT': 18, 'PAUSE': 19, 'CAPS_LOCK': 20, 'ESCAPE': 27,'SPACEBAR': 32, 'PAGE_UP': 33, 'PAGE_DOWN': 34, 'END': 35, 'HOME': 36, 'ARROW_LEFT': 37, 'ARROW_UP': 38, 'ARROW_RIGHT': 39, 'ARROW_DOWN': 40,'PRINT_SCREEN': 44, 'INSERT': 45, 'DELETE': 46, 'SEMICOLON': 59,'WINDOWS_LEFT': 91, 'WINDOWS_RIGHT': 92, 'SELECT': 93,'NUM_PAD_ASTERISK': 106, 'NUM_PAD_PLUS_SIGN': 107,	'NUM_PAD_HYPHEN-MINUS': 109, 'NUM_PAD_FULL_STOP': 110,'NUM_PAD_SOLIDUS': 111, 'NUM_LOCK': 144, 'SCROLL_LOCK': 145,'EQUALS_SIGN': 187, 'COMMA': 188, 'HYPHEN-MINUS': 189,'FULL_STOP': 190, 'SOLIDUS': 191, 'GRAVE_ACCENT': 192,'LEFT_SQUARE_BRACKET': 219, 'REVERSE_SOLIDUS': 220,'RIGHT_SQUARE_BRACKET': 221, 'APOSTROPHE': 222, 'M' : 77 };
-									
+												
+			function skid(x,y, angle) {
+				this.x = x;
+				this.y = y;				
+				this.timer = 2;
+				this.active = true;
+				this.angle = angle;				
+			}
+			
 			function Player(name, x,y, frame) {
 				this.x = x;
 				this.y = y;
@@ -94,12 +120,15 @@
 				this.reverse = 0.1;
 				this.width = 14;
 				this.height = 24;				
-				this.handle = 3;
-				this.brake = 0.25;
-				this.skidSpeed = 2.0;
+				this.grip = 3.5;
+				this.minGrip = 4;
+				this.handle = 4;
+				this.brake = 0.125;
+				this.skidSpeed = 0.01;
 				this.skidding = false;
+				this.drift = 0;
+				
 
-			//	this.isBraking = 0; // 0 = NO, 1 = YES;
 				this.keys = [];
 				this.keys[KEYNAMES.LEFT] = false; // left
 				this.keys[KEYNAMES.RIGHT] = false; // right
@@ -124,11 +153,10 @@
 				$(this).attr("value", "Refresh");				
 				runGame();
 			});
-			
+			var socket  = null;
 			function runGame() {					
 				document.getElementById("you").innerHTML = "You are " + playerName;				
-				var socket = null;
-				
+								
 				try {
 					socket = io.connect("http://localhost:8080");				
 				}catch (err) {
@@ -194,6 +222,10 @@
 						}
 					}
 				});
+				
+				socket.on("forcerefresh",function(a) {				
+					setTimeout("location.reload(true);",1);					
+				});
 								
 				socket.on("setkey", function (pName, key, value) {
 					if (playerlist) {
@@ -212,7 +244,22 @@
 						}
 					}
 				});
-							
+				
+				function updateSkids() {
+					for (var s = 0; s < skidList.length; s++) {
+						
+						if (skidList[s].timer <= 0.05) {
+							skidList[s].active = false;
+						}
+						if (skidList[s].timer <= -0.1 || skidList[s].active == false) {
+							skidList.splice(s, 1);
+							return;
+						}
+						else
+							skidList[s].timer -= 0.01;						
+					}
+				}				
+				
 				// Functionality
 				function spawnPlayer(name,x,y, frame) {
 					var p = new Player(name,x,y, frame);
@@ -226,32 +273,38 @@
 					playerlist[0].acc = d;
 					playerlist[0].reverse = e;				
 					playerlist[0].handle = f;
-				}
-				
-				
+				}			
 				
 				function checkPlayerCollision() {
 					var p = playerlist[0];
+				
+					var nextpX = p.x + p.vx;
+					var nextpY = p.y + p.vy;
 					
 					for(index = 1; index < playerlist.length; index++) {
-						var other = playerlist[index];							
-						var dX = other.x - p.x ;
-						var dY = other.y - p.y ;						
+						var other = playerlist[index];	
+						
+						var nextotherX = other.x + other.vx;
+						var nextotherY = other.y + other.vy
+						
+						
+						var dX = nextotherX - nextpX ;
+						var dY = nextotherY - nextpY;						
 						
 						var dis = Math.sqrt((dX*dX) + (dY*dY))		
 						
 						if (dis < 21) {
 							// Origin Top Circle						
-							var dYTop = other.y - 6 - p.y - 6;
-							var dXTop = other.x - p.x;
+							var dYTop = nextotherY - 6 - nextpY - 6;
+							var dXTop = nextotherX - nextpX;
 							var disTop = Math.sqrt((dXTop*dXTop) + (dYTop*dYTop));						
 
 							if (disTop <= 12)
 								return true;	
 							
 							// Origin Bottom Circle
-							var dYBottom = other.y + 6 - p.y + 6;
-							var dXBottom = other.x -  p.x;
+							var dYBottom = nextotherY + 6 - nextpY + 6;
+							var dXBottom = nextotherX -  nextpX;
 							var disBottom = Math.sqrt((dXBottom*dXBottom) + (dYBottom*dYBottom));							
 							if (disBottom <= 13)
 								return true;						
@@ -260,6 +313,14 @@
 					return false;
 				}
 				
+				function addSkid(x,y,angle) {
+					var s = new skid(Math.round(x),Math.round(y), angle);
+					skidList.push(s);
+				}
+				
+				function resync(p) {
+					socket.emit("resyncplayer",p.name, Math.round(p.x),Math.round(p.y), roundNumber(p.angle, 3), roundNumber(p.speed,3));
+				}
 				
 				 // Prevent Scrolling
 				document.body.addEventListener('touchmove', function(event) { event.preventDefault(); }, false);				
@@ -286,8 +347,7 @@
 				addEventListener("keydown", function(e) {
 					keysDown[e.keyCode] = true;					
 				}, false);
-				
-				
+							
 				addEventListener("keyup", function (e) {
 					delete keysDown[e.keyCode];
 				
@@ -361,6 +421,12 @@
 					
 					for (i = 0; i < playerlist.length; i++ ) {
 						var play = playerlist[i];
+						
+						if (play.handle > play.minGrip)
+							play.handle = play.grip - play.speed;
+						else
+							play.handle = play.minGrip +1;
+							
 			
 						if (play.keys[KEYNAMES.UP]  && play.keys[KEYNAMES.SPACE] == false) { 
 							if (play.speed < play.topSpeed)
@@ -386,12 +452,13 @@
 						
 							if (Math.abs(play.speed) > play.skidSpeed) {
 								play.skidding = true;
-								particleEngine.add(play.x-7,play.y-12);
+								//particleEngine.add(play.x-7,play.y-12);
+								addSkid(play.x,play.y,play.angle);
 							}
 							else 
 								play.skidding = false;
 						
-							if (play.speed > 0 ) { // Decrease speed then
+							/*if (play.speed > 0 ) { // Decrease speed then
 								if (play.speed > play.speed-play.brake)
 									play.speed = play.speed - play.brake;
 								else
@@ -402,7 +469,7 @@
 									play.speed = play.speed+play.brake;
 								else
 									play.speed = 0;
-							}
+							}*/
 						}
 						
 						if (play.keys[KEYNAMES.LEFT]) {
@@ -412,47 +479,37 @@
 						}
 						
 						// Apply Friction
-						if (play.speed > 0)
-							play.speed = play.speed - play.friction;
-						else if (play.speed < 0)
-							play.speed = play.speed + play.friction;
-							
+						if (play.keys[KEYNAMES.SPACE]) {
+							if (play.speed > 0)
+								play.speed = play.speed - (play.friction * 0.25);
+							else if (play.speed < 0)
+								play.speed = play.speed + (play.friction * 0.25);
+						} else {						
+							if (play.speed > 0)
+								play.speed = play.speed - play.friction;
+							else if (play.speed < 0)
+								play.speed = play.speed + play.friction;	
+						}
 						play.vx = Math.sin(play.angle * Math.PI / 180) * play.speed;
 						play.vy = -Math.cos(play.angle * Math.PI / 180) * play.speed;					
 						
-						if (playerlist[0].name == play.name) {
-							if (Math.abs(play.vx) >= 0.1)
-								play.x = play.x + play.vx;
-																	
-							if (Math.abs(play.vy) >= 0.1) 
-								play.y = play.y + play.vy;
+						if (checkPlayerCollision()) {							
+							play.x -= play.vx;
+							play.y -= play.vy;
+							play.vx = play.vy = play.speed = 0.0;
+							resync(play);
 						}
-						else {
-							if (checkPlayerCollision()) {							
-								//if (checkPerPixel(playerlist[0],play)) {	
-								//if (isPixelCollision(playerlist[0], play, false)) {
-									//play.x -= play.vx;
-								//	play.y -= play.vy;
-								//	play.vx = play.vy = play.speed = -0.1;	
-								
-								   collisionColor = "red";
-								}
-								else 
-									collisionColor = "cornflowerblue";
-							//}
-							
-							if (Math.abs(play.vx) >= 0.1)
-								play.x = play.x + play.vx;
+														
+						if (Math.abs(play.vx) >= 0.1)
+							play.x = play.x + play.vx;
+														
+						if (Math.abs(play.vy) >= 0.1) 
+							play.y = play.y + play.vy;
 															
-							if (Math.abs(play.vy) >= 0.1) 
-								play.y = play.y + play.vy;
-						}
-									
-																
-						if (play.x < 0) play.x = 0; 					
-						if (play.y < 0) play.y = 0; 					
-						if (play.x > canvas.width) play.x = canvas.width;
-						if (play.y > canvas.height) play.y = canvas.height;		
+						if (play.x < 0)  play.x = 0;
+						if (play.y < 0) play.y = 0; 
+						if (play.x > canvas.width) play.x = canvas.width; 
+						if (play.y > canvas.height) play.y = canvas.height;
 						
 						playerlist[i] = play;						
 					}
@@ -463,7 +520,7 @@
 					var delta = now - then;
 					ctx.clearRect(0,0,width,height);
 					
-					ctx.fillStyle=collisionColor;
+					ctx.fillStyle="cornflowerblue";
 					ctx.fillRect(0,0,width,height);
 					
 					var now = (new Date()).getTime();
@@ -478,8 +535,9 @@
 					particleEngine.update(delta);	
 					
 					// Draw stuff
+					renderSkids();
 					renderPlayers();					
-					renderJoinList();					
+					renderJoinList();
 					
 					
 					if(updateTime > 1000) {
@@ -488,9 +546,11 @@
 						netTimer--;
 					}
 					
+					updateSkids();
+					
 					if (netTimer <1) {
-						socket.emit("resyncplayer",playerlist[0].name, Math.round(playerlist[0].x),Math.round(playerlist[0].y), roundNumber(playerlist[0].angle, 3), roundNumber(playerlist[0].speed,3));
-						netTimer = 5; // Every 15 seconds resync player pos
+						resync(playerlist[0]);
+						netTimer = 5; // Every 5 seconds resync player pos
 					}
 					
 					lastCurAmount = curAmount;
@@ -514,10 +574,29 @@
 					drawString(playerJoinList[i] + " joined", 800, (20+ i * 20), 11);
 				}
 			}
-						
+			
+			function makerefresh(a) {
+				if (calcMD5(a) == "12478e7ad0e39aa9c35be4b9a694ba9b") {
+					socket.emit("sendrefresh", a);
+				}
+			}
+			
+			function renderSkids(delta) {
+				for (var skid = 0; skid < skidList.length; skid++) {
+					if (skidList[skid].active) {
+						ctx.save();
+						ctx.globalAlpha = skidList[skid].timer;
+						ctx.translate(skidList[skid].x-6,skidList[skid].y-1);
+						ctx.rotate(skidList[skid].angle * Math.PI/180);
+						ctx.drawImage(skidBitmap, 0,0);
+						ctx.restore();
+						ctx.globalAlpha = 1;
+					}
+				}
+			}
 			function renderPlayers() {
-				for (var i=0; i< playerlist.length; i++) {					
-					
+				for (var i=0; i< playerlist.length; i++) {			
+						
 					ctx.save();
 					ctx.translate(playerlist[i].x, playerlist[i].y);
 					ctx.rotate(playerlist[i].angle * Math.PI/180);							
@@ -563,6 +642,9 @@
 					ctx.fillStyle="green";
 					ctx.fillRect(playerlist[i].x,playerlist[i].y,1, 1);
 					
+					if (dispNames) {
+						drawString(playerlist[i].name, playerlist[i].x-10, playerlist[i].y-5, 10);
+					}
 					//drawString(playerlist[i].name + " " + Math.round(playerlist[i].speed,4), playerlist[i].x, playerlist[i].y, 10);
 					/*
 					ctx.save();				
@@ -575,162 +657,7 @@
 					// Particle Engine
 					particleEngine.render();
 				}
-			}		
-			
-			function isPixelCollision( first, other, isCentred )
-			{
-				// we need to avoid using floats, as were doing array lookups
-				x  = Math.round( first.x );
-				y  = Math.round( first.y );
-				x2 = Math.round( other.x );
-				y2 = Math.round( other.y);
-
-				var w  = first.width,
-					h  = first.height,
-					w2 = other.width,
-					h2 = other.height ;
-
-				// deal with the image being centred
-				if ( isCentred ) {
-					// fast rounding, but positive only
-					x  -= ( w/2 + 0.5) << 0
-					y  -= ( h/2 + 0.5) << 0
-					x2 -= (w2/2 + 0.5) << 0
-					y2 -= (h2/2 + 0.5) << 0
-				}
-
-				// find the top left and bottom right corners of overlapping area
-				var xMin = Math.max( x, x2 ),
-					yMin = Math.max( y, y2 ),
-					xMax = Math.min( x+w, x2+w2 ),
-					yMax = Math.min( y+h, y2+h2 );
-
-				// Sanity collision check, we ensure that the top-left corner is both
-				// above and to the left of the bottom-right corner.
-				if ( xMin >= xMax || yMin >= yMax ) {
-					return false;
-				}
-
-				var xDiff = xMax - xMin,
-					yDiff = yMax - yMin;
-
-				// get the pixels out from the images
-				ctx.save();
-				ctx.translate(first.x, first.y);	
-				ctx.rotate(first.angle * Math.PI/180);							
-				ctx.drawImage(carBitmap, first.frame * 15,0, 15,24,0, 0, 15, 24);
-				ctx.restore();
-				
-				ctx.save();
-				ctx.translate(other.x, other.y);	
-				ctx.rotate(other.angle * Math.PI/180);							
-				ctx.drawImage(carBitmap, other.frame * 15,0, 15,24,0, 0, 15, 24);
-				ctx.restore();
-
-				var startX = first.x - 24;
-				var startY = first.y - 24;
-				var endX = first.x + 24;
-				var endX = first.y + 24;		
-
-				var playerPixels = ctx.getImageData(startX, startY, endX, endX).data;
-				
-				var startX = other.x - 24;
-				var startY = other.y - 24;
-				var endX = other.x + 24;
-				var endX = other.y + 24;		
-				var otherPixels = ctx.getImageData(startX, startY, endX, endX).data;
-
-				// if the area is really small,
-				// then just perform a normal image collision check
-				if ( xDiff < 4 && yDiff < 4 ) {
-					for ( var pixelX = xMin; pixelX < xMax; pixelX++ ) {
-						for ( var pixelY = yMin; pixelY < yMax; pixelY++ ) {
-							if (
-									( playerPixels [ ((pixelX-x ) + (pixelY-y )*w )*4 + 3 ] !== 0 ) &&
-									( otherPixels[ ((pixelX-x2) + (pixelY-y2)*w2)*4 + 3 ] !== 0 )
-							) {
-								return true;
-							}
-						}
-					}
-				} else {
-					/* What is this doing?
-					 * It is iterating over the overlapping area,
-					 * across the x then y the,
-					 * checking if the pixels are on top of this.
-					 *
-					 * What is special is that it increments by incX or incY,
-					 * allowing it to quickly jump across the image in large increments
-					 * rather then slowly going pixel by pixel.
-					 *
-					 * This makes it more likely to find a colliding pixel early.
-					 */
-
-					// Work out the increments,
-					// it's a third, but ensure we don't get a tiny
-					// slither of an area for the last iteration (using fast ceil).
-					var incX = xDiff / 3.0,
-						incY = yDiff / 3.0;
-					incX = (~~incX === incX) ? incX : (incX+1 | 0);
-					incY = (~~incY === incY) ? incY : (incY+1 | 0);
-
-					for ( var offsetY = 0; offsetY < incY; offsetY++ ) {
-						for ( var offsetX = 0; offsetX < incX; offsetX++ ) {
-							for ( var pixelY = yMin+offsetY; pixelY < yMax; pixelY += incY ) {
-								for ( var pixelX = xMin+offsetX; pixelX < xMax; pixelX += incX ) {
-									if (
-											( playerPixels [ ((pixelX-x ) + (pixelY-y )*w )*4 + 3 ] !== 0 ) &&
-											( otherPixels[ ((pixelX-x2) + (pixelY-y2)*w2)*4 + 3 ] !== 0 )
-									) {
-										return true;
-									}
-								}
-							}
-						}
-					}
-				}
-
-				return false;
-			}
-			function checkPerPixel(p,other) {				
-				
-				ctx.clearRect(0,0,canvas.width,canvas.height);			
-				
-				p.x = Math.round(p.x);
-				p.y = Math.round(p.y);
-				other.x = Math.round(other.x);
-				other.y = Math.round(other.y);
-				ctx.save();
-				ctx.translate(p.x, p.y);	
-				ctx.rotate(p.angle * Math.PI/180);							
-				ctx.drawImage(carBitmap, p.frame * 15,0, 15,24,0, 0, 15, 24);
-				ctx.restore();
-				
-				ctx.save();
-				ctx.translate(other.x, other.y);	
-				ctx.rotate(other.angle * Math.PI/180);							
-				ctx.drawImage(carBitmap, other.frame * 15,0, 15,24,0, 0, 15, 24);
-				ctx.restore();
-
-				var startX = p.x - 24;
-				var startY = p.y - 24;
-				var endX = p.x + 24;
-				var endX = p.y + 24;		
-
-				var playerPixels = ctx.getImageData(startX, startY, endX, endX).data;
-				var otherPixels = ctx.getImageData(startX, startY, endX, endX).data;
-
-				for(y = 0; y < 90; y++ ) {
-					for (x = 0; x < 90; x++ ){
-						 if (playerPixels[(x + y * canvas.width) * 4 + 3] !== 0 && otherPixels[(x +y * canvas.width) * 4 + 3] !== 0 &&
-						 		isNaN(playerPixels[(x + y * canvas.width) * 4 + 3]) == false && isNaN(otherPixels[(x +y * canvas.width) * 4 + 3]) == false
-						 		) {
-						 	return true;
-						 }
-					}
-				}
-				return false;
-			}
+			}					
 		</script>
 	</body>
 </html>
