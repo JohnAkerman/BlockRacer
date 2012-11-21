@@ -6,11 +6,11 @@ A HTML 5 Multiplayer car game that uses Node.js and Socket.io
 Current Implementation
 ----------------------
 
-*Players define their name before joining.
-*Car movement
-*Ability to shoot bullets (not refined yet).
-*Handbrake leave skidmarks.
-*Majority of logic is completed on each client, network usage is compromised of sending key strokes and resyncing player values.
+* Players define their name before joining.
+* Car movement
+* Ability to shoot bullets (not refined yet).
+* Handbrake leave skidmarks.
+* Majority of logic is completed on each client, network usage is compromised of sending key strokes and resyncing player values.
 
 
 Usage
