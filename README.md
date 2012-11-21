@@ -12,6 +12,14 @@ Current Implementation
 * Handbrake leave skidmarks.
 * Majority of logic is completed on each client, network usage is compromised of sending key strokes and resyncing player values.
 
+### ToDo
+
+* Tile system used for track sprites and track collision.
+* Refine shooting/bullet mechanic.
+
+### Known Bugs
+None at the moment!
+
 
 Usage
 -----
@@ -20,20 +28,10 @@ Ensure the Start Server.bat file points to your location of BlockRacer, default 
 Current code listens to port 8080.
 
 
-Car Controls
-------------
+### Car Controls
 
-WASD/Arrow keys		-		Control car
-Spacebar 			-		Handbrake
+WASD/Arrow keys		-		Control car  
+Spacebar 			-		Handbrake  
 X					-		Shoot bullet (currently max of 10 at a time)
 
-To Do
------
 
-Tile system used for track sprites and track collision.
-Refine shooting/bullet mechanic.
-
-Known Bugs
-----------
-
-None at the moment!
