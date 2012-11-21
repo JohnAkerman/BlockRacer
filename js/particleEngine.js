@@ -19,10 +19,10 @@ var particleEngine = new (function() {
 					that.particles = [];
 					
 					that.particleTexture = new Image();
-					that.particleTexture.src = "whiteDot.png";
+					that.particleTexture.src = "./images/whiteDot.png";
 					
 					that.particleTextureRed = new Image();
-					that.particleTextureRed.src = "redDot.png";
+					that.particleTextureRed.src = "./images/redDot.png";
 					
 					that.maxParticles = 5000,
 					that.active = true;

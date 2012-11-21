@@ -7,6 +7,10 @@ return { 'X' : Math.floor(xIn / tileSize),
 		 'Y' : Math.floor(yIn / tileSize) }
 }
 
+function roundNumber(num, dec) {
+	return Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
+}
+
 function randomInt(X) {
 	return Math.floor(X * (Math.random() % 1));
 }

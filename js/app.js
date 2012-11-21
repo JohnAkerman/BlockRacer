@@ -58,7 +58,12 @@ io.sockets.on('connection', function (socket) {
 	socket.on("sendrefresh", function (a) {
 		socket.broadcast.emit("forcerefresh", a);
 	});
-  
+
+	socket.on("sendBullet", function(p) {
+		socket.broadcast.emit("createBullet", p);
+	});
+
+	  
 	socket.on('disconnect', function(){
 		io.sockets.emit('killplayer',socket.clientname);
 		delete playerlist[socket.clientname];
