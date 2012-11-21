@@ -1,16 +1,39 @@
-A HTML 5 Multiplayer Game
+BlockRacer
+==========
 
-Features
-Players define their name and join the server.
-Use the arrow keys to move your car around the screen.
+A HTML 5 Multiplayer car game that uses Node.js and Socket.io
 
-Updated:
-Dramatically reduced the calls between server and clients. Keyup and keydown only sends one message per time.
+Current Implementation
+----------------------
 
-All players calculations are done on the players client and position, speed and angle are resynced across every 10 seconds.
+*Players define their name before joining.
+*Car movement
+*Ability to shoot bullets (not refined yet).
+*Handbrake leave skidmarks.
+*Majority of logic is completed on each client, network usage is compromised of sending key strokes and resyncing player values.
 
-TODO:
-Collision between players
-Sounds
-Track layouts
 
+Usage
+-----
+
+Ensure the Start Server.bat file points to your location of BlockRacer, default is `c:\wamp\www\blockracer\node\node js/app.js`
+Current code listens to port 8080.
+
+
+Car Controls
+------------
+
+WASD/Arrow keys		-		Control car
+Spacebar 			-		Handbrake
+X					-		Shoot bullet (currently max of 10 at a time)
+
+To Do
+-----
+
+Tile system used for track sprites and track collision.
+Refine shooting/bullet mechanic.
+
+Known Bugs
+----------
+
+None at the moment!
