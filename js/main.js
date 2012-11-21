@@ -32,7 +32,7 @@ var curAmount;
 var then = Date.now();
 
 // Game Toggles
-var debugToggle = true;
+var debugToggle = false;
 var dispNames = false;
 
 // Player Related
@@ -41,13 +41,6 @@ var KEY = {'BACKSPACE': 8, 'TAB': 9, 'NUM_PAD_CLEAR': 12, 'ENTER': 13, 'SHIFT': 
 
 // Socket/Node Variables
 var socket = null;
-
-
-// Server Callbacks
-
-
-
-
 
 
 // Server Global Functions
@@ -151,10 +144,6 @@ function checkPlayerCollision(p) {
 	return false;
 }
 
-function addSkid(x,y,angle) {
-	var s = new skid(Math.round(x),Math.round(y), angle);
-	skidList.push(s);
-}
 
 function addBullet(x,y, owner,angle, frame) {
 	var b = new Bullet(Math.round(x), Math.round(y), owner, angle, width, height, frame);
@@ -584,20 +573,6 @@ function renderJoinList() {
 	}
 }
 
-function renderSkids(delta) {
-	for (var skid = 0; skid < skidList.length; skid++) {
-		if (skidList[skid].active) {
-			ctx.save();
-			ctx.globalAlpha = skidList[skid].timer;
-			ctx.translate(skidList[skid].x-6,skidList[skid].y-1);
-			ctx.rotate(skidList[skid].angle * Math.PI/180);
-			ctx.drawImage(skidBitmap, 0,0);
-			ctx.restore();
-			ctx.globalAlpha = 1;
-		}
-	}
-}
-
 function renderBullets(delta){
 	for (var b = 0; b < bulletList.length; b++ ){
 		if (!bulletList[b].active)
@@ -620,7 +595,7 @@ function renderPlayers() {
 
 		//ctx.fillRect(0,0 , playerlist[i].width, playerlist[i].height);
 
-		if (debugToggle == true) {
+		if (debugToggle) {
 			
 			ctx.beginPath();
 			ctx.arc(0,0,12,0,2*Math.PI,false);
