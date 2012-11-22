@@ -4,7 +4,8 @@ function Bullet(x,y,owner, angle, maxX, maxY, colour) {
 	this.y = y;
 	this.active = true;
 	this.angle = angle;
-	this.speed = 5;
+	this.speedX = 5;
+	this.speedY = 5;
 	this.vx = 0;
 	this.vy = 0;
 	this.maxX = maxX;
@@ -12,16 +13,19 @@ function Bullet(x,y,owner, angle, maxX, maxY, colour) {
 	this.colour = colour;
 	this.life = 2000;
 	this.bounceAmount = 0;
-	this.bounceMax = 3;
+	this.bounceMax = 2;
 
 	
 	this.update = function(delta) {
 		if (this.active) {
-				this.vx = -Math.sin(this.angle * Math.PI / 180) * this.speed;
-				this.vy = Math.cos(this.angle* Math.PI / 180) * this.speed;
+				this.vx = Math.sin(this.angle * Math.PI / 180) * this.speedX;
+				this.vy = -Math.cos(this.angle* Math.PI / 180) * this.speedY;
 				
-				this.x -= this.vx;
-				this.y -= this.vy;		
+				this.x += this.vx;
+				this.y += this.vy;		
+
+		//		play.vx = Math.sin(play.angle * Math.PI / 180) * play.speed;
+		//play.vy = -Math.cos(play.angle * Math.PI / 180) * play.speed;	
 
 				this.life--;
 
@@ -31,11 +35,16 @@ function Bullet(x,y,owner, angle, maxX, maxY, colour) {
 	};
 
 	this.checkBounds = function() {
-		if (this.x < 0 || this.y < 0 || this.x > this.maxX || this.y > this.maxY) {
+		if (this.x < 0 || this.x > this.maxX) {
+			if (this.bounceAmount < this.bounceMax) {				
+				this.speedX *= -1;
+				this.bounceAmount++;
+			} else
+				this.die();
+		}
+		else if (this.y < 0 || this.y > this.maxY) {
 			if (this.bounceAmount < this.bounceMax) {
-				this.vx *= -1;
-				this.vy	*= -1;
-				this.speed *= -1;
+				this.speedY *= -1;
 				this.bounceAmount++;
 			}else
 				this.die();
@@ -68,7 +77,7 @@ function Bullet(x,y,owner, angle, maxX, maxY, colour) {
 			else if (this.colour == 3)
 				ctx.fillStyle="blue";
 
-			ctx.fillRect(0,0,2,5);
+			ctx.fillRect(0,0,2,2);
 			ctx.restore();
 		}		
 	};
