@@ -26,7 +26,27 @@ function Player(name, x,y, frame) {
 	this.name = name;	
 	this.frame = frame;	
 }		
-  
+  /*
+	
+	// send to current request socket client aka emitting to server
+ socket.emit('message', "this is a test");
+
+ // sending to all clients, include sender
+ io.sockets.emit('message', "this is a test");
+
+ // sending to all clients except sender
+ socket.broadcast.emit('message', "this is a test");
+
+ // sending to all clients in 'game' room(channel) except sender
+ socket.broadcast.to('game').emit('message', 'nice game');
+
+  // sending to all clients in 'game' room(channel), include sender
+ io.sockets.in('game').emit('message', 'cool game');
+
+ // sending to individual socketid
+ io.sockets.socket(socketid).emit('message', 'for your eyes only');
+
+  */
 io.sockets.on('connection', function (socket) {  
 	
 	// Create player on server and add to array
@@ -35,10 +55,8 @@ io.sockets.on('connection', function (socket) {
 		var player = new Player(playerName,x,y, frame);
 		playerlist.push(player);
 		clientids.push(socket.id);		
-		io.sockets.emit("joinAnnounce", playerName);
-		//socket.broadcast.emit("joinAnnounce", playerName);
-		io.sockets.emit('addplayer',playerlist, playerName,x,y, frame); // add player on everyones screen
-	   // io.sockets.emit("joinSync",playerlist,x,y);
+		io.sockets.emit("joinAnnounce", playerName);				
+		io.sockets.emit('addplayer',playerlist, playerName,x,y, frame);	   
 	});
   
 	// When server recieves a moveplayer command, broadcast it to players
@@ -51,12 +69,12 @@ io.sockets.on('connection', function (socket) {
 	});
 	
 	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed) {
-		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);
-		io.sockets.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,4);							
+		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);		
+		socket.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,4);							
 	});    
 	
 	socket.on("sendrefresh", function (a) {
-		socket.broadcast.emit("forcerefresh", a);
+		io.sockets.emit("forcerefresh", a);
 	});
 
 	socket.on("sendBullet", function(p) {

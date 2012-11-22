@@ -236,6 +236,7 @@ function init() {
 		});
 						
 		socket.on("setkey", function (pName, key, value) {
+			console.log("setting" + pName + " key " + key + " value " + value);
 			if (playerlist) {
 				for (var i in playerlist) {
 					if (pName == playerlist[i].name && playerName != playerlist[i].name) {
@@ -269,7 +270,7 @@ function init() {
 // Key Handling
 var keysDown = [];
 addEventListener("keydown", function(e) { keysDown[e.keyCode] = true;}, false);							
-addEventListener("keyup", function (e) { delete keysDown[e.keyCode]; }, false);
+addEventListener("keyup", function(e) { keysDown[e.keyCode] = false; delete keysDown[e.keyCode]; }, false);
 
 $(window).keydown(function(e){	
 
@@ -317,18 +318,23 @@ $(window).keyup(function(e){
 	if (!playerlist[0]) return;
 
 	if(e.keyCode == 37 || e.keyCode == 65){
+		if (playerlist[0].leftAllowed) return;
 		playerlist[0].leftAllowed = true;
 		playerlist[0].keys[KEYNAMES.LEFT] = false;
 		socket.emit("sendkey", playerlist[0].name,KEYNAMES.LEFT, false);
+
 	} else if(e.keyCode == 38 || e.keyCode == 87){
+		if (playerlist[0].upAllowed) return;
 		playerlist[0].upAllowed = true;
 		playerlist[0].keys[KEYNAMES.UP] = false;
 		socket.emit("sendkey", playerlist[0].name,KEYNAMES.UP, false);
 	} else if(e.keyCode == 39 || e.keyCode == 68){
+		if (playerlist[0].rightAllowed) return;
 		playerlist[0].rightAllowed = true;
 		playerlist[0].keys[KEYNAMES.RIGHT] = false;
 		socket.emit("sendkey", playerlist[0].name, KEYNAMES.RIGHT, false);
 	} else if (e.keyCode == 40 || e.keyCode == 83){
+		if (playerlist[0].downAllowed) return;
 		playerlist[0].downAllowed = true;
 		playerlist[0].keys[KEYNAMES.DOWN] = false;
 		socket.emit("sendkey", playerlist[0].name, KEYNAMES.DOWN, false);
@@ -339,13 +345,13 @@ $(window).keyup(function(e){
 	}
 	
 	if(e.keyCode == 32){		 
+		if (playerlist[0].downAllowed) return;
 		playerlist[0].spaceAllowed = true;
 		playerlist[0].keys[KEYNAMES.SPACE] = false;
 		socket.emit("sendkey", playerlist[0].name, KEYNAMES.SPACE, false);
 	}
 
-	if(e.keyCode == 88){						
-
+	if(e.keyCode == 88) {	
 		if (!playerlist[0].xAllowed) return;
 		playerlist[0].xAllowed = false;
 		//playerlist[0].keys[KEYNAMES.X] = false;
