@@ -18,7 +18,7 @@ Current Implementation
 * Refine shooting/bullet mechanic.
 
 ### Known Bugs
-None at the moment!
+Bullets don't always reduce their owners bullet count, resulting in the player not having the ability to shoot any more bullets.
 
 
 Usage
