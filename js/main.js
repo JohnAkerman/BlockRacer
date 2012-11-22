@@ -272,6 +272,8 @@ addEventListener("keydown", function(e) { keysDown[e.keyCode] = true;}, false);
 addEventListener("keyup", function (e) { delete keysDown[e.keyCode]; }, false);
 
 $(window).keydown(function(e){	
+
+	if (!playerlist[0]) return;
 					
 	if(e.keyCode == 37 || e.keyCode == 65){						
 		if (!playerlist[0].leftAllowed) return;
@@ -311,6 +313,8 @@ $(window).keydown(function(e){
 });
 
 $(window).keyup(function(e){
+
+	if (!playerlist[0]) return;
 
 	if(e.keyCode == 37 || e.keyCode == 65){
 		playerlist[0].leftAllowed = true;
@@ -393,8 +397,9 @@ function GameUpdate (delta) {
 		
 			if (Math.abs(play.speed) > play.skidSpeed) {
 				play.skidding = true;
-				//particleEngine.add(play.x-7,play.y-12);
+				particleEngine.add(play.x,play.y, play.angle,0,0);
 				addSkid(play.x,play.y,play.angle);
+
 			}
 			else 
 				play.skidding = false;
@@ -488,6 +493,7 @@ function GameLoop() {
 	// Draw stuff
 	renderSkids();
 	renderBullets();
+	particleEngine.render();
 	renderPlayers();					
 	renderJoinList();
 	
@@ -589,11 +595,6 @@ function renderPlayers() {
 		ctx.translate(playerlist[i].x, playerlist[i].y);
 		ctx.rotate(playerlist[i].angle * Math.PI/180);							
 		ctx.drawImage(carBitmap, playerlist[i].frame * 14,(playerlist[i].keys[KEYNAMES.SPACE]?1:0)*24, 14,24,-7, -12, 14, 24);
-		
-		//ctx.fillRect(playerlist[i].x-playerlist[i].width, playerlist[i].y-playerlist[i].height, playerlist[i].width, playerlist[i].height);
-		//drawString(playerlist[i].name, playerlist[i].x + 3, playerlist[i].y, 10);
-
-		//ctx.fillRect(0,0 , playerlist[i].width, playerlist[i].height);
 
 		if (debugToggle) {
 			
@@ -632,9 +633,6 @@ function renderPlayers() {
 		
 		if (dispNames) {
 			drawString(playerlist[i].name + " " + playerlist[i].health, playerlist[i].x-10, playerlist[i].y-5, 10);
-		}
-		
-		// Particle Engine
-		particleEngine.render();
+		}		
 	}
 }	

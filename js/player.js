@@ -18,7 +18,7 @@ function Player(name, x,y, frame) {
 	this.minGrip = 4;
 	this.handle = 4;
 	this.brake = 0.125;
-	this.skidSpeed = 0.01;
+	this.skidSpeed = 0.1;
 	this.skidding = false;
 	this.drift = 0;		
 	this.bulletAmount = 0;

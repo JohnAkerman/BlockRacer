@@ -2,20 +2,19 @@
 var particleEngine = new (function() {
 								   
 				var that = this;
-					function Particle(posX, posY) {
+					function Particle(posX, posY, angle, vX,vY) {
 						var that = this;
 						
-						that.positionX = (posX) + randomBetween(-1.0, 1.0);
-						that.positionY = (posY) + randomBetween(-1.0, 1.0);
-												
-						that.directionX = randomBetween(-.6,1.2);
-						that.directionY = randomBetween(-.6,1.2);
-						that.life = randomBetween(10,35);
-						that.size = randomBetween(8, 15);
-						that.alpha = randomBetween(.01,.12);	
-						
-						that.texturePick = randomBetween(1, 5);
-					}					
+						that.positionX = posX;
+						that.positionY = posY;
+						that.directionX = randomBetween(-.1,.1);
+						that.directionY = randomBetween(-.1,.1);
+						that.life = randomBetween(5,8);
+						that.size = randomBetween(10, 25);
+						that.alpha = randomBetween(.1,.3);	
+						that.angle = angle;
+					}		
+
 					that.particles = [];
 					
 					that.particleTexture = new Image();
@@ -29,22 +28,22 @@ var particleEngine = new (function() {
 					that.particleCount = 0;
 					
 					
-					that.add = function(positionX, positionY) {
-						spawnCount = randomBetween(90, 240 );
+					that.add = function(positionX, positionY, angle, vX,vY) {
+						spawnCount = randomBetween(25, 30 );
 						if ( spawnCount + that.particleCount > that.maxParticles) {
 							spawnCount = (that.maxParticles - that.particleCount) / 1.2;
 						}			
 						
 						while (spawnCount > 0) {
-							that.addPart(positionX, positionY);
+							that.addPart(positionX, positionY, angle, vX, vY);
 							spawnCount--;
 						}
 					}
 					
-					that.addPart = function(positionX, positionY) {
+					that.addPart = function(positionX, positionY, angle, vX,vY) {
 						if (that.particleCount >= that.maxParticles ) return;
 						
-						var part = new Particle(positionX, positionY);
+						var part = new Particle(positionX, positionY, angle, vX, vY);
 						
 						that.particles[that.particleCount] = part;
 						that.particleCount++;
@@ -84,23 +83,13 @@ var particleEngine = new (function() {
 								}
 								that.particleCount--;
 							} else {
-							 	
-								var grad = ctx.createRadialGradient(255,255,255,0,0,0);
-								grad.addColorStop( 0, 'rgba(255,255,255,1)' );   
-								grad.addColorStop( 1, 'rgba(0,0,0,0)' ); 
-								ctx.fillStyle = grad;
 								
-							 	
-								
-								 if (that.particles[particleIndex].texturePick == 2) {
-									 ctx.globalAlpha = that.particles[particleIndex].alpha / 1.4;
-									ctx.drawImage(that.particleTextureRed, 0,0, 32, 32,that.particles[particleIndex].positionX, that.particles[particleIndex].positionY, that.particles[particleIndex].size, that.particles[particleIndex].size); 
-								 }
-								 else {
-									 ctx.globalAlpha = that.particles[particleIndex].alpha;
-									 ctx.drawImage(that.particleTexture, 0,0, 32, 32,that.particles[particleIndex].positionX, that.particles[particleIndex].positionY, that.particles[particleIndex].size, that.particles[particleIndex].size);
-								 }
-								
+								ctx.save();
+								ctx.globalAlpha = that.particles[particleIndex].alpha;
+								ctx.translate(that.particles[particleIndex].positionX, that.particles[particleIndex].positionY);
+							 	ctx.rotate(that.particles[particleIndex].angle * Math.PI / 180);
+								ctx.drawImage(that.particleTexture, 0,0, 32, 32,-5,0, that.particles[particleIndex].size, that.particles[particleIndex].size);
+								ctx.restore();
 							}
 						}
 						ctx.globalAlpha = 1;   // Full opacity
