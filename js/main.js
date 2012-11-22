@@ -236,7 +236,6 @@ function init() {
 		});
 						
 		socket.on("setkey", function (pName, key, value) {
-			console.log("setting" + pName + " key " + key + " value " + value);
 			if (playerlist) {
 				for (var i in playerlist) {
 					if (pName == playerlist[i].name && playerName != playerlist[i].name) {
@@ -345,7 +344,7 @@ $(window).keyup(function(e){
 	}
 	
 	if(e.keyCode == 32){		 
-		if (playerlist[0].downAllowed) return;
+		if (playerlist[0].spaceAllowed) return;
 		playerlist[0].spaceAllowed = true;
 		playerlist[0].keys[KEYNAMES.SPACE] = false;
 		socket.emit("sendkey", playerlist[0].name, KEYNAMES.SPACE, false);

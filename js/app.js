@@ -68,8 +68,8 @@ io.sockets.on('connection', function (socket) {
 		socket.broadcast.emit("setkey", pName, key, value);
 	});
 	
-	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed) {
-		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed);		
+	socket.on("resyncplayer", function (pName, playerx, playery, angle, speed, health) {
+		socket.broadcast.emit("syncplayer", pName, playerx,playery, angle, speed, health);		
 		socket.emit("syncPlayerStats", 3.5,-2,0.05,0.15,0.1,4);							
 	});    
 	
