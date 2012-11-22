@@ -33,8 +33,3 @@ Current code listens to port 8080.
 WASD/Arrow keys		-		Control car  
 Spacebar 			-		Handbrake  
 X					-		Shoot bullet (currently max of 10 at a time)
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 86b07eb22a4e8855367e28db4c3e7393bc098f81
