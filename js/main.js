@@ -253,10 +253,14 @@ function init() {
 			}
 		});
 
-		socket.on("createBullet", function(p) {
-			if (p.bulletAmount < p.bulletMax) {
-				p.bulletAmount++;
-				addBullet(p.x,p.y,p.name,p.angle, p.frame);
+		socket.on("createBullet", function(p) {			
+			for (var z = 0; z < playerlist.length; z++ ) {
+				if (p.name != playerlist[0].name && p.name == playerlist[z].name) {
+					if (playerlist[z].bulletAmount < playerlist[z].bulletMax) {
+						playerlist[z].bulletAmount++;
+						addBullet(playerlist[z].x,playerlist[z].y,playerlist[z].name,playerlist[z].angle, playerlist[z].frame);
+					}
+				}
 			}
 		});
 		GameLoop();
@@ -552,6 +556,7 @@ function updateBullets(delta) {
 			if (playerlist[p].name != bulletList[b].owner) {
 				if (checkCollision(playerlist[p], bulletList[b])) {								
 					playerlist[p].damage(10);
+					bulletList[b].die(playerlist);
 					removed = true; 
 				}
 			}
@@ -562,7 +567,7 @@ function updateBullets(delta) {
 		else {
 			bulletList[b].update(delta);					
 
-			if (bulletList[b].checkBounds()) {
+			if (bulletList[b].checkBounds(playerlist)) {
 				bulletList.splice(b,1);
 			}
 		}

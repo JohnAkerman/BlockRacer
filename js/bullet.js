@@ -34,31 +34,32 @@ function Bullet(x,y,owner, angle, maxX, maxY, colour) {
 		}
 	};
 
-	this.checkBounds = function() {
+	this.checkBounds = function(plist) {
 		if (this.x < 0 || this.x > this.maxX) {
 			if (this.bounceAmount < this.bounceMax) {				
 				this.speedX *= -1;
 				this.bounceAmount++;
 			} else
-				this.die();
+				this.die(plist);
 		}
 		else if (this.y < 0 || this.y > this.maxY) {
 			if (this.bounceAmount < this.bounceMax) {
 				this.speedY *= -1;
 				this.bounceAmount++;
 			}else
-				this.die();
+				this.die(plist);
 		}
 		else
 			return false;
 	};
 
-	this.die = function() {
-		this.active = false;
-
-		for (var a = 0; a < playerlist.length; a++) {
-			if (playerlist[a].name == this.owner)
-				playerlist[a].bulletAmount--;			
+	this.die = function(plist) {
+		for (var a = 0; a < plist.length; a++) {
+			if (plist[a].name == this.owner) {
+				plist[a].bulletAmount--;		
+				this.active = false;
+				continue;
+			}	
 		}
 	};
 
